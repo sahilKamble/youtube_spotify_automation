@@ -8,6 +8,8 @@ class Profile(models.Model):
     creds = models.CharField(max_length=999, blank=True, null=True)
     gcreds = models.CharField(max_length=999, blank=True, null=True)
 
+    def __str__(self):
+        return self.user.username
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
