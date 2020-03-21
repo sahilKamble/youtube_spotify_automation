@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+</head>
+<body>
+
+    <h1>Home Page</h1>
+    {% if user.is_authenticated %}
+        <h2>Hello, {{user.username}}</h2>
+
+        <a href="{% url 'google' %}">Google</a> <br>
+        <p>{{ ctx }}</p>
+
+        {% if playlists %}
+            <h4>Here's your spotify playlists</h4>
+            <ul>
+            {% for key, playlist in playlists.items %}
+                <li>{{ key }}</li>
+                <ul>
+                {% for key, track in playlist.items %}
+                    <li>{{key}} . {{ track }}</li>
+                {% endfor %}
+                </ul>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <a href="{% url 'spotify' %}">Get Spotify Playlists</a> <br>
+        {% endif %}
+
+        <a href="{% url 'update' %}">Scratch credentials</a><br>
+        <a href="{% url 'logout' %}">Logout</a>
+    {% else %}
+        <a href="{% url 'signup' %}">Signup</a><br>
+        <a href="{% url 'login' %}">Login</a>
+    {% endif %}
+
+    
+    
+</body>
+</html>
