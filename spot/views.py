@@ -125,7 +125,7 @@ def google(request):
     access_type='offline',
     include_granted_scopes='true')
 
-    return redirect(authorization_url)
+    return redirect('home')
 
 @login_required(login_url='login')
 def spotify(request):
@@ -175,7 +175,7 @@ def oauth2callback(request):
 
     context['ctx'] = context 
 
-    return render(request, 'home.html', context=context)
+    return redirect('home')
 
 @login_required(login_url='login')
 def callback(request):
