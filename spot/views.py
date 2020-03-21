@@ -140,7 +140,7 @@ def spotify(request):
         #print(token_info)
         return redirect('home')#to-do handle this
     else:
-        sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE,cache_path=None )
+        sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, cache_path=None, show_dialog=True)
         return redirect(sp_oauth.get_authorize_url())
 
 
@@ -202,7 +202,7 @@ def callback(request):
 def update_profile(request):#for testing ,to-do handle this
     user = User.objects.get(username=request.user)
     user.profile.creds = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit...'
-    user.profile.gcreds =  'Lorem ipsum dolor sit amet, consectetur adipisicing elit...'
+    user.profile.gcreds = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit...'
     user.save()
     return redirect('home')
 
