@@ -12,6 +12,8 @@ from google.oauth2.credentials import Credentials
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
+from dateutil import parser
+
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES = ['https://www.googleapis.com/auth/youtube']
 API_SERVICE_NAME = 'youtube'
@@ -37,23 +39,35 @@ def home_view(request):
             gtoken_info = eval(user.profile.gcreds)#change name
         except:
             pass    
-        
-        credentials=''
 
         if(gtoken_info):
-            print(gtoken_info['token'])
-            credentials = Credentials(token = gtoken_info['token'],refresh_token=gtoken_info['refresh_token'],token_uri=gtoken_info['token_uri'],client_id=gtoken_info['client_id'],client_secret=gtoken_info['client_secret'])
+            try :
+                print(gtoken_info)
+                exp = parser.parse(gtoken_info['expiry'])
+                print(" lol exp :",exp)
+            except:
+                pass
+
+        
+        credentials, yt = '',''
+        if(gtoken_info):
+            credentials = Credentials(token = gtoken_info['token'],
+                        refresh_token=gtoken_info['refresh_token'],
+                        token_uri=gtoken_info['token_uri'],
+                        client_id=gtoken_info['client_id'],
+                        client_secret=gtoken_info['client_secret'])
             
-        yt = ''
         if credentials:
+            print('Here')
             yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
         
         if yt:
-            req = yt.playlists().list(part="snippet,contentDetails",
-                maxResults=25,
-                mine=True)
+            print('Here')
+            req = yt.playlists().list(part="contentDetails",maxResults=25,mine=True)
             result = req.execute()
             context['result'] = result
+
+        
         
 
 
@@ -106,7 +120,8 @@ def google(request):
     user = User.objects.get(username=request.user)
     token_info=""
     try:
-        token_info = eval(user.profile.gcreds)
+        pass
+        #token_info = eval(user.profile.gcreds)
     except:
         pass
     #to do handle this
@@ -155,12 +170,13 @@ def oauth2callback(request):
     url = request.build_absolute_uri() 
     flow.fetch_token(authorization_response=url)
     credentials = flow.credentials
+    #print(credentials.expiry)
     creds = dict()
-    context = dict()
     if credentials:
         creds = {
             'token': credentials.token,
             'refresh_token': credentials.refresh_token,
+            'expiry': str(credentials.expiry), 
             'token_uri': credentials.token_uri,
             'client_id': credentials.client_id,
             'client_secret': credentials.client_secret,
@@ -171,11 +187,9 @@ def oauth2callback(request):
         user.save()
 
         token_info = eval(user.profile.gcreds)
-        context['creds'] = token_info
+        print('saved this :' ,token_info)
 
-    context['ctx'] = context 
-
-    return render(request, 'home.html', context=context)
+    return redirect('home')
 
 @login_required(login_url='login')
 def callback(request):
