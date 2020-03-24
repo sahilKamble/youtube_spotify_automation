@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from spot.views import home_view, signup_view, update_profile, spotify, callback, google, oauth2callback
+from spot.views import *
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
@@ -17,4 +17,5 @@ urlpatterns = [
     path('callback/', callback, name='callback'),
     path('google/', google, name='google'),
     path('oauth2callback', oauth2callback, name='oauth2callback'),
+    path('refresh/', refresh_token, name = 'refresh')
 ]

@@ -14,6 +14,9 @@ from googleapiclient.discovery import build
 
 from dateutil import parser
 
+
+from google.auth.transport.requests import Request
+
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES = ['https://www.googleapis.com/auth/youtube']
 API_SERVICE_NAME = 'youtube'
@@ -189,6 +192,40 @@ def oauth2callback(request):
         token_info = eval(user.profile.gcreds)
         print('saved this :' ,token_info)
 
+    return redirect('home')
+
+def refresh_token(request):
+    user = User.objects.get(username = request.user)
+    
+    gtoken_info = None
+    try :
+        gtoken_info = eval(user.profile.gcreds)
+    except:
+        pass 
+
+    credentials, yt = None,None
+    if gtoken_info:
+        credentials = Credentials(token = gtoken_info['token'],
+                    refresh_token=gtoken_info['refresh_token'],
+                    token_uri=gtoken_info['token_uri'],
+                    client_id=gtoken_info['client_id'],
+                    client_secret=gtoken_info['client_secret'])
+   
+    req = Request()
+    credentials.refresh(req)
+    creds = None
+    if credentials:
+        creds = {
+            'token': credentials.token,
+            'refresh_token': credentials.refresh_token,
+            'expiry': str(credentials.expiry), 
+            'token_uri': credentials.token_uri,
+            'client_id': credentials.client_id,
+            'client_secret': credentials.client_secret,
+            'scopes': credentials.scopes}
+
+    user.profile.gcreds = str(creds)
+    user.save()
     return redirect('home')
 
 @login_required(login_url='login')
