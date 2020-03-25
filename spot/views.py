@@ -47,6 +47,7 @@ def home_view(request):
         credentials, yt = '',''
         if(gtoken_info):
             exp = parser.parse(gtoken_info['expiry'])
+            #print(exp)
             credentials = Credentials(token = gtoken_info['token'],
                 refresh_token=gtoken_info['refresh_token'],
                 token_uri=gtoken_info['token_uri'],
@@ -73,17 +74,65 @@ def home_view(request):
             req = yt.playlists().list(part="contentDetails,snippet",maxResults=25,mine=True)
             ytlists = req.execute()
             context['ytlists'] = {}
+            next_page = ytlists.get('nextPageToken')
             if not ytlists['items']:
                 context['ytlists'] = {'Could not find any playlists':'Err'}#handle this
             for ytlist in ytlists['items']:
-                print("here")
                 context['ytlists'][ytlist['snippet']['title']] = {}
                 req = yt.playlistItems().list(
                     part="snippet",
                     playlistId=ytlist['id'])
                 res = req.execute()
-                for i, item in enumerate(res['items']):
-                    context['ytlists'][ytlist['snippet']['title']][i+1] = item['snippet']['title']
+                nextVideoPage = res.get('nextPageToken')
+                i = 0
+                for item in res['items']:
+                    i += 1
+                    context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
+                while nextVideoPage:
+                    req = yt.playlistItems().list(
+                        part="snippet",
+                        playlistId=ytlist['id'],
+                        pageToken=nextVideoPage)
+                    res = req.execute()
+                    nextVideoPage = res.get('nextPageToken')
+                    for item in res['items']:
+                        i += 1
+                        context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
+
+
+
+            while(next_page):
+                req = yt.playlists().list(part="contentDetails,snippet",
+                        maxResults=25,
+                        mine=True,
+                        pageToken=next_page)
+                ytlists = req.execute()
+                next_page = ytlists.get('nextPageToken')
+                for ytlist in ytlists['items']:
+                    context['ytlists'][ytlist['snippet']['title']] = {}
+                    req = yt.playlistItems().list(
+                        part="snippet",
+                        playlistId=ytlist['id'])
+                    res = req.execute()
+                    nextVideoPage = res.get('nextPageToken')
+                    i = 0
+                    for item in res['items']:
+                        i += 1
+                        context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
+                    while nextVideoPage:
+                        req = yt.playlistItems().list(
+                            part="snippet",
+                            playlistId=ytlist['id'],
+                            pageToken=nextVideoPage)
+                        res = req.execute()
+                        nextVideoPage = res.get('nextPageToken')
+                        for item in res['items']:
+                            i += 1
+                            context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
+
+
+
+
                 
 
         
