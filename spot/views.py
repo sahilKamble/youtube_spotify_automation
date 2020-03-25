@@ -81,7 +81,8 @@ def home_view(request):
                 context['ytlists'][ytlist['snippet']['title']] = {}
                 req = yt.playlistItems().list(
                     part="snippet",
-                    playlistId=ytlist['id'])
+                    playlistId=ytlist['id'],
+                    maxResults=25)
                 res = req.execute()
                 nextVideoPage = res.get('nextPageToken')
                 i = 0
@@ -92,7 +93,8 @@ def home_view(request):
                     req = yt.playlistItems().list(
                         part="snippet",
                         playlistId=ytlist['id'],
-                        pageToken=nextVideoPage)
+                        pageToken=nextVideoPage,
+                        maxResults=25)
                     res = req.execute()
                     nextVideoPage = res.get('nextPageToken')
                     for item in res['items']:
@@ -123,7 +125,8 @@ def home_view(request):
                         req = yt.playlistItems().list(
                             part="snippet",
                             playlistId=ytlist['id'],
-                            pageToken=nextVideoPage)
+                            pageToken=nextVideoPage,
+                            maxResults=25)
                         res = req.execute()
                         nextVideoPage = res.get('nextPageToken')
                         for item in res['items']:
