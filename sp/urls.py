@@ -17,5 +17,5 @@ urlpatterns = [
     path('callback/', callback, name='callback'),
     path('google/', google, name='google'),
     path('oauth2callback', oauth2callback, name='oauth2callback'),
-    path('refresh/', refresh_token, name = 'refresh')
+    #path('refresh/', refresh_token, name = 'refresh')
 ]

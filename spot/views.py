@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 
 import spotipy
 from spotipy import oauth2
@@ -42,33 +43,48 @@ def home_view(request):
             gtoken_info = eval(user.profile.gcreds)#change name
         except:
             pass    
-
-        if(gtoken_info):
-            try :
-                print(gtoken_info)
-                exp = parser.parse(gtoken_info['expiry'])
-                print(" lol exp :",exp)
-            except:
-                pass
-
         
         credentials, yt = '',''
         if(gtoken_info):
+            exp = parser.parse(gtoken_info['expiry'])
             credentials = Credentials(token = gtoken_info['token'],
-                        refresh_token=gtoken_info['refresh_token'],
-                        token_uri=gtoken_info['token_uri'],
-                        client_id=gtoken_info['client_id'],
-                        client_secret=gtoken_info['client_secret'])
-            
-        if credentials:
-            print('Here')
+                refresh_token=gtoken_info['refresh_token'],
+                token_uri=gtoken_info['token_uri'],
+                client_id=gtoken_info['client_id'],
+                client_secret=gtoken_info['client_secret'])
+            credentials.expiry = exp
+            if credentials.expired:
+                req = Request()
+                credentials.refresh(req)
+                creds = None
+                creds = {
+                    'token': credentials.token,
+                    'refresh_token': credentials.refresh_token,
+                    'expiry': str(credentials.expiry), 
+                    'token_uri': credentials.token_uri,
+                    'client_id': credentials.client_id,
+                    'client_secret': credentials.client_secret,
+                    'scopes': credentials.scopes}
+                user.profile.gcreds = str(creds)
+                user.save()
             yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
         
         if yt:
-            print('Here')
-            req = yt.playlists().list(part="contentDetails",maxResults=25,mine=True)
-            result = req.execute()
-            context['result'] = result
+            req = yt.playlists().list(part="contentDetails,snippet",maxResults=25,mine=True)
+            ytlists = req.execute()
+            context['ytlists'] = {}
+            if not ytlists['items']:
+                context['ytlists'] = {'Could not find any playlists':'Err'}#handle this
+            for ytlist in ytlists['items']:
+                print("here")
+                context['ytlists'][ytlist['snippet']['title']] = {}
+                req = yt.playlistItems().list(
+                    part="snippet",
+                    playlistId=ytlist['id'])
+                res = req.execute()
+                for i, item in enumerate(res['items']):
+                    context['ytlists'][ytlist['snippet']['title']][i+1] = item['snippet']['title']
+                
 
         
         
@@ -96,7 +112,7 @@ def home_view(request):
             spuser = sp.current_user()
             playlists = sp.user_playlists(spuser['id'])
             #print(playlists)
-            context['playlists'] = {}
+            #context['playlists'] = {}
             if not playlists['items']:
                 context['playlists'] = {'Could not find any playlists':'Err'}#handle this
             for playlist in playlists['items']:
@@ -113,25 +129,24 @@ def home_view(request):
                             track = item['track']
                             context['playlists'][playlist['name']][i+1] = track['name'] 
 
-    context['ctx'] = context
+    #context['ctx'] = context
     return render(request, 'home.html', context=context)
 
 
 @login_required(login_url='login')
 def google(request):
-    context = {}
-    user = User.objects.get(username=request.user)
-    token_info=""
-    try:
-        pass
-        #token_info = eval(user.profile.gcreds)
-    except:
-        pass
-    #to do handle this
-    if token_info:
-        context['creds'] = token_info
-        context['ctx'] = context
-        return render(request, 'home.html', context=context)
+    # context = {}
+    # user = User.objects.get(username=request.user)
+    # token_info=""
+    # try:
+    #     token_info = eval(user.profile.gcreds)
+    # except:
+    #     pass
+    # #to do handle this
+    # if token_info:
+    #     context['creds'] = token_info
+    #     context['ctx'] = context
+    #     return render(request, 'home.html', context=context)
 
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
     'client_secret.json',
@@ -140,33 +155,40 @@ def google(request):
     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
 
     authorization_url, state = flow.authorization_url(
-    access_type='offline',
-    include_granted_scopes='true')
+        access_type='offline',
+        include_granted_scopes='true')
 
     return redirect(authorization_url)
 
 @login_required(login_url='login')
 def spotify(request):
-    user = User.objects.get(username=request.user)
-    token_info = ""
-    try:
-        token_info = eval(user.profile.creds)
-    except:
-        pass
+    # user = User.objects.get(username=request.user)
+    # token_info = ""
+    # try:
+    #     token_info = eval(user.profile.creds)
+    # except:
+    #     pass
     
-    if token_info:
-        #print(token_info)
-        return redirect('home')#to-do handle this
-    else:
-        sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, cache_path=None, show_dialog=True)
-        return redirect(sp_oauth.get_authorize_url())
+    # if token_info:
+    #     #print(token_info)
+    #     return redirect('home')#to-do handle this
+
+    sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, show_dialog=True)
+    return redirect(sp_oauth.get_authorize_url())
 
 
 
 def oauth2callback(request):
+
+    #to do This->Note that you should do some error handling here incase its not a valid token.
+    state = request.GET.get('state',None)
+
+
+    state = request.GET.get('state',None)
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         'client_secret.json',
-        ['https://www.googleapis.com/auth/youtube'])#To do handle this giving scopes error
+        ['https://www.googleapis.com/auth/youtube'],
+        state = state)#To do handle this giving scopes error
 
     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
 
@@ -191,42 +213,38 @@ def oauth2callback(request):
 
         token_info = eval(user.profile.gcreds)
         print('saved this :' ,token_info)
+    else:
+        HttpResponse("Could not fetch token go to 'home' and try again")
 
     return redirect('home')
 
-def refresh_token(request):
-    user = User.objects.get(username = request.user)
+# def refresh_token(request,gtoken_info):
+#     user = User.objects.get(username = request.user)
     
-    gtoken_info = None
-    try :
-        gtoken_info = eval(user.profile.gcreds)
-    except:
-        pass 
-
-    credentials, yt = None,None
-    if gtoken_info:
-        credentials = Credentials(token = gtoken_info['token'],
-                    refresh_token=gtoken_info['refresh_token'],
-                    token_uri=gtoken_info['token_uri'],
-                    client_id=gtoken_info['client_id'],
-                    client_secret=gtoken_info['client_secret'])
+#     credentials, yt = None,None
+    
+#     credentials = Credentials(token = gtoken_info['token'],
+#                 refresh_token=gtoken_info['refresh_token'],
+#                 token_uri=gtoken_info['token_uri'],
+#                 client_id=gtoken_info['client_id'],
+#                 client_secret=gtoken_info['client_secret'])
    
-    req = Request()
-    credentials.refresh(req)
-    creds = None
-    if credentials:
-        creds = {
-            'token': credentials.token,
-            'refresh_token': credentials.refresh_token,
-            'expiry': str(credentials.expiry), 
-            'token_uri': credentials.token_uri,
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'scopes': credentials.scopes}
+#     req = Request()
+#     credentials.refresh(req)
+#     creds = None
+#     if credentials:
+#         creds = {
+#             'token': credentials.token,
+#             'refresh_token': credentials.refresh_token,
+#             'expiry': str(credentials.expiry), 
+#             'token_uri': credentials.token_uri,
+#             'client_id': credentials.client_id,
+#             'client_secret': credentials.client_secret,
+#             'scopes': credentials.scopes}
 
-    user.profile.gcreds = str(creds)
-    user.save()
-    return redirect('home')
+#     user.profile.gcreds = str(creds)
+#     user.save()
+#     return
 
 @login_required(login_url='login')
 def callback(request):
