@@ -24,6 +24,9 @@ def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
 
 class YtTrack(models.Model):
-    vidid = models.CharField(max_length=99, null=True)
+    vidid = models.CharField(max_length=99)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.vidid
 

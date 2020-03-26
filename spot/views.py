@@ -15,8 +15,12 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
 from dateutil import parser
+import youtube_dl
+
 
 from .create_playlist import *
+
+from .models import YtTrack
 
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES = ['https://www.googleapis.com/auth/youtube']
@@ -27,7 +31,7 @@ API_VERSION = 'v3'
 SPOTIPY_CLIENT_ID = '71f415cec4364aa1acbf7c28b53d4f79'
 SPOTIPY_CLIENT_SECRET = '53bad3d05cd948eeb8e5f7c72cf7d0db'
 SPOTIPY_REDIRECT_URI = 'http://127.0.0.1:8000/callback/'
-SCOPE = 'user-library-read'
+SCOPE = 'playlist-modify-public,playlist-modify-private'
 
 def home_view(request):
     context = {}
@@ -155,7 +159,7 @@ def home_view(request):
             spuser = sp.current_user()
             playlists = sp.user_playlists(spuser['id'])
             #print(playlists)
-            #context['playlists'] = {}
+            context['playlists'] = {}
             if not playlists['items']:
                 context['playlists'] = {'Could not find any playlists':'Err'}#handle this
             for playlist in playlists['items']:
@@ -333,81 +337,81 @@ def signup_view(request):
 @login_required(login_url='login')
 def update_list(request):
     user = User.objects.get(username=request.user)
-    gtoken_info,spcreds = None, None
-    try :
-        gtoken_info = eval(user.profile.gcreds)
-        spcreds = eval(user.profile.creds)
-    except:
-        pass
-    
-    if gtoken_info and spcreds:
-        exp = parser.parse(gtoken_info['expiry'])
-        #print(exp)
-        gcredentials = Credentials(token = gtoken_info['token'],
-            refresh_token=gtoken_info['refresh_token'],
-            token_uri=gtoken_info['token_uri'],
-            client_id=gtoken_info['client_id'],
-            client_secret=gtoken_info['client_secret'])
-        gcredentials.expiry = exp
-        if gcredentials.expired:
-            req = Request()
-            gcredentials.refresh(req)
-            creds = None
-            creds = {
-                'token': gcredentials.token,
-                'refresh_token': gcredentials.refresh_token,
-                'expiry': str(gcredentials.expiry), 
-                'token_uri': gcredentials.token_uri,
-                'client_id': gcredentials.client_id,
-                'client_secret': gcredentials.client_secret,
-                'scopes': gcredentials.scopes}
-            user.profile.gcreds = str(creds)
-            user.save()
-        yt = build(API_SERVICE_NAME, API_VERSION, credentials = gcredentials)
-        req = yt.playlists().list(part="contentDetails,snippet",maxResults=25,mine=True)
-        ytlists = req.execute()
-        # context['ytlists'] = {}
-        # next_page = ytlists.get('nextPageToken')
+    gtoken_info = eval(user.profile.gcreds)
+    exp = parser.parse(gtoken_info['expiry'])
+    gcredentials = Credentials(token = gtoken_info['token'],
+        refresh_token=gtoken_info['refresh_token'],
+        token_uri=gtoken_info['token_uri'],
+        client_id=gtoken_info['client_id'],
+        client_secret=gtoken_info['client_secret'])
+    gcredentials.expiry = exp
+    if gcredentials.expired:
+        req = Request()
+        gcredentials.refresh(req)
+        creds = None
+        creds = {
+            'token': gcredentials.token,
+            'refresh_token': gcredentials.refresh_token,
+            'expiry': str(gcredentials.expiry), 
+            'token_uri': gcredentials.token_uri,
+            'client_id': gcredentials.client_id,
+            'client_secret': gcredentials.client_secret,
+            'scopes': gcredentials.scopes}
+        user.profile.gcreds = str(creds)
+        user.save()
+    yt = build(API_SERVICE_NAME, API_VERSION, credentials = gcredentials)
+    req = yt.playlistItems().list(
+        part="snippet",
+        playlistId=user.profile.ytid,
+        maxResults=25)
+    res = req.execute()
+    newtracks = list()
+    # for item in res['items']:
+    #     i += 1
+    #     ytlist.append(item['id'])
 
-        yt_list_id = ''
-        if not ytlists['items']:
+    for track in res['items']:
+        if user.profile.yttrack_set.filter(vidid=track['snippet']['resourceId']['videoId']).exists():
             pass
-        else :
-            for ytlist in ytlists['items']:
-                if ytlist['snippet']['title'] == 'SONGS':
-                    yt_list_id = ytlist['id']
-        
-        if not yt_list_id:
-            req = yt.playlists().insert(
-                part="snippet",
-                body={
-                    "snippet": {
-                        "title": "SONGS"
-                    }
-                }
-            )
-            res = req.execute()
-            #IMP to do exception handling with res
-            yt_list_id = res['id']
-        
-        ytlist = {}
-        # context['ytlists'][ytlist['snippet']['title']] = {}
-        req = yt.playlistItems().list(
-            part="snippet",
-            playlistId=yt_list_id,
-            maxResults=25)
-        res = req.execute()
-        nextVideoPage = res.get('nextPageToken')
-        i = 0
-        if not res['items']:
-            pass
-        else :
-            i = 0 
-            for item in res['items']:
-                i += 1
-                # context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
-                ytlist['items'] = {}
-                ytlist['items']['trac']
+        else:
+            newtracks.append(track['snippet']['resourceId']['videoId'])
+            YtTrack.objects.create(vidid=track['snippet']['resourceId']['videoId'], profile=user.profile)
+    sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)
+    token_info = eval(user.profile.creds)
+
+    if sp_oauth.is_token_expired(token_info):
+        token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+        user.profile.creds = str(token_info)
+        user.save()
+
+    access_token = token_info['access_token']
+
+    sp = spotipy.Spotify(access_token)
+    spid = []
+    print(newtracks)
+
+    for track in newtracks:
+        youtube_url = "https://www.youtube.com/watch?v={}".format(track)
+        video = youtube_dl.YoutubeDL({}).extract_info(youtube_url, download=False)
+        song_name = video["track"]
+        artist = video["artist"]
+        spres = None 
+        if song_name :
+            print(song_name)
+            spres = sp.search(q=song_name,limit=1)
+        if spres and len(spres['tracks']['items']) > 0 :
+            spid.append(spres['tracks']['items'][0]['id'])
+    
+    spuser = sp.current_user()
+    # playlists = sp.user_playlists(spuser['id'])
+    print(spid)
+    if len(spid) > 0:
+        sp.user_playlist_add_tracks(playlist_id=user.profile.spid,user=spuser['id'],tracks=spid)
+
+    return redirect('home')
+
+    
+
 
 
     
