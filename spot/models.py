@@ -7,6 +7,9 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     creds = models.CharField(max_length=999, blank=True, null=True)
     gcreds = models.CharField(max_length=999, blank=True, null=True)
+    ytid = models.CharField(max_length=99, null=True)
+    spid = models.CharField(max_length=99, null=True)
+
 
     def __str__(self):
         return self.user.username
@@ -19,3 +22,8 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+
+class YtTrack(models.Model):
+    vidid = models.CharField(max_length=99, null=True)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+

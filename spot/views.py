@@ -12,11 +12,11 @@ import google.oauth2.credentials
 from google.oauth2.credentials import Credentials
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
 
 from dateutil import parser
 
-
-from google.auth.transport.requests import Request
+from .create_playlist import *
 
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES = ['https://www.googleapis.com/auth/youtube']
@@ -132,15 +132,6 @@ def home_view(request):
                         for item in res['items']:
                             i += 1
                             context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
-
-
-
-
-                
-
-        
-        
-
 
         access_token = ""
         #token_info = sp_oauth.get_cached_token()
@@ -337,3 +328,87 @@ def signup_view(request):
         login(request, user)
         return redirect('home')
     return render(request, 'signup.html', {'form': form})
+
+
+@login_required(login_url='login')
+def update_list(request):
+    user = User.objects.get(username=request.user)
+    gtoken_info,spcreds = None, None
+    try :
+        gtoken_info = eval(user.profile.gcreds)
+        spcreds = eval(user.profile.creds)
+    except:
+        pass
+    
+    if gtoken_info and spcreds:
+        exp = parser.parse(gtoken_info['expiry'])
+        #print(exp)
+        gcredentials = Credentials(token = gtoken_info['token'],
+            refresh_token=gtoken_info['refresh_token'],
+            token_uri=gtoken_info['token_uri'],
+            client_id=gtoken_info['client_id'],
+            client_secret=gtoken_info['client_secret'])
+        gcredentials.expiry = exp
+        if gcredentials.expired:
+            req = Request()
+            gcredentials.refresh(req)
+            creds = None
+            creds = {
+                'token': gcredentials.token,
+                'refresh_token': gcredentials.refresh_token,
+                'expiry': str(gcredentials.expiry), 
+                'token_uri': gcredentials.token_uri,
+                'client_id': gcredentials.client_id,
+                'client_secret': gcredentials.client_secret,
+                'scopes': gcredentials.scopes}
+            user.profile.gcreds = str(creds)
+            user.save()
+        yt = build(API_SERVICE_NAME, API_VERSION, credentials = gcredentials)
+        req = yt.playlists().list(part="contentDetails,snippet",maxResults=25,mine=True)
+        ytlists = req.execute()
+        # context['ytlists'] = {}
+        # next_page = ytlists.get('nextPageToken')
+
+        yt_list_id = ''
+        if not ytlists['items']:
+            pass
+        else :
+            for ytlist in ytlists['items']:
+                if ytlist['snippet']['title'] == 'SONGS':
+                    yt_list_id = ytlist['id']
+        
+        if not yt_list_id:
+            req = yt.playlists().insert(
+                part="snippet",
+                body={
+                    "snippet": {
+                        "title": "SONGS"
+                    }
+                }
+            )
+            res = req.execute()
+            #IMP to do exception handling with res
+            yt_list_id = res['id']
+        
+        ytlist = {}
+        # context['ytlists'][ytlist['snippet']['title']] = {}
+        req = yt.playlistItems().list(
+            part="snippet",
+            playlistId=yt_list_id,
+            maxResults=25)
+        res = req.execute()
+        nextVideoPage = res.get('nextPageToken')
+        i = 0
+        if not res['items']:
+            pass
+        else :
+            i = 0 
+            for item in res['items']:
+                i += 1
+                # context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
+                ytlist['items'] = {}
+                ytlist['items']['trac']
+
+
+    
+
