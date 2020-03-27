@@ -40,12 +40,8 @@ def home_view(request):
         credentials = None
         yt = None
         
-        try :
+        if user.profile.gcreds:
             gtoken_info = eval(user.profile.gcreds)#change name
-        except:
-            pass    
-        
-        if gtoken_info:
             exp = parser.parse(gtoken_info['expiry'])
             #print(exp)
             credentials = Credentials(token = gtoken_info['token'],
@@ -133,15 +129,11 @@ def home_view(request):
                             i += 1
                             context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
 
-        access_token = ""
-        #token_info = sp_oauth.get_cached_token()
-        token_info = ""
-        try:
-            token_info = eval(user.profile.creds)
-        except:
-            pass
+        access_token = None
+        token_info = None
 
-        if token_info:
+        if user.profile.creds:
+            token_info = eval(user.profile.creds)
             #print(token_info)
             if sp_oauth.is_token_expired(token_info):
                 token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
@@ -257,14 +249,9 @@ def spotify(request):
     sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, show_dialog=True)
     return redirect(sp_oauth.get_authorize_url())
 
-
-
 def oauth2callback(request):
 
     #to do This->Note that you should do some error handling here incase its not a valid token.
-    state = request.GET.get('state',None)
-
-
     state = request.GET.get('state',None)
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         'client_secret.json',
@@ -346,7 +333,6 @@ def callback(request):
         pass#important handle this
 
     return redirect('home')
-        
 
 @login_required(login_url='login')
 def update_profile(request):#for testing ,to-do handle this
@@ -366,7 +352,6 @@ def signup_view(request):
         login(request, user)
         return redirect('home')
     return render(request, 'signup.html', {'form': form})
-
 
 @login_required(login_url='login')
 def update_list(request):
@@ -443,10 +428,3 @@ def update_list(request):
         sp.user_playlist_add_tracks(playlist_id=user.profile.spid,user=spuser['id'],tracks=spid)
 
     return redirect('home')
-
-    
-
-
-
-    
-
