@@ -19,5 +19,6 @@ urlpatterns = [
     path('oauth2callback', oauth2callback, name='oauth2callback'),
     path('update_list/', update_list, name='update_list')
     #path('refresh/', refresh_token, name = 'refresh')
-    path('playlist/<str:playlist_id>', yt_playlist, name='yt_playlist')
+    path('playlist/<str:playlist_id>', yt_playlist, name='yt_playlist'),
+    path('create', create_playlist, name='create_playlist'),
 ]

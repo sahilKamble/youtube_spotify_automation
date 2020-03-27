@@ -43,10 +43,10 @@
                 </ul>
             {% endfor %}
             </ul>
+        <a href="{% url 'create_playlist' %}">Create New Playlist Instead</a>
         {% else %}
             <a href="{% url 'google' %}">Get Youtube playlists</a> <br>
         {% endif %}
-
         <a href="{% url 'update' %}">Scratch credentials</a><br>
         <!-- <a href="{}">Refrest Google Credentials</a><br> -->
         <a href="{% url 'logout' %}">Logout</a>

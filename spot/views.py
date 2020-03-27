@@ -184,6 +184,36 @@ def yt_playlist(request, playlist_id):
 
     return redirect('home')
 
+def create_playlist(request):
+    user = User.objects.get(username=request.user)
+    
+    if user.profile.gcreds:
+        gtoken_info = eval(user.profile.gcreds)
+        exp = parser.parse(gtoken_info['expiry'])
+        #print(exp)
+        credentials = Credentials(token = gtoken_info['token'],
+            refresh_token=gtoken_info['refresh_token'],
+            token_uri=gtoken_info['token_uri'],
+            client_id=gtoken_info['client_id'],
+            client_secret=gtoken_info['client_secret'])
+        yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
+        
+        req = yt.playlists().insert(
+            part="snippet",
+            body={
+            "snippet": {
+                "title": "test lol",
+                "description": "Playlist created by spotify automation app, add your songs here"
+                }
+            }
+        )
+        response = req.execute()
+        id = response["id"]
+        user.profile.playlistid = id
+        user.save()
+
+        return redirect('home')
+
 @login_required(login_url='login')
 def google(request):
     # context = {}
