@@ -11,6 +11,8 @@ class Profile(models.Model):
     spid = models.CharField(max_length=99, null=True)
 
 
+    playlistid = models.CharField(max_length=999, blank=True, null=True)
+    
     def __str__(self):
         return self.user.username
 

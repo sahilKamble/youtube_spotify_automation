@@ -1,3 +1,5 @@
+{% load funct %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,7 +35,7 @@
             <h4>Here's your Youtube playlists</h4>
             <ul>
             {% for key, playlist in ytlists.items %}
-                <li>{{ key }}</li>
+                <li><a href="{% url 'yt_playlist' id|next %}">{{ key }}</a></li>
                 <ul>
                 {% for key, track in playlist.items %}
                     <li>{{key}} . {{ track }}</li>

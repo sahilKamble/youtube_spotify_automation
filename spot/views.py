@@ -4,10 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-
 import spotipy
 from spotipy import oauth2
-
 import google.oauth2.credentials
 from google.oauth2.credentials import Credentials
 import google_auth_oauthlib.flow
@@ -27,7 +25,6 @@ SCOPES = ['https://www.googleapis.com/auth/youtube']
 API_SERVICE_NAME = 'youtube'
 API_VERSION = 'v3'
 
-
 SPOTIPY_CLIENT_ID = '71f415cec4364aa1acbf7c28b53d4f79'
 SPOTIPY_CLIENT_SECRET = '53bad3d05cd948eeb8e5f7c72cf7d0db'
 SPOTIPY_REDIRECT_URI = 'http://127.0.0.1:8000/callback/'
@@ -39,17 +36,16 @@ def home_view(request):
     if request.user.is_authenticated:
         user = User.objects.get(username=request.user)
         sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)
-        
-        ##### for google auth ##########
-        gtoken_info=''
+        gtoken_info = None
+        credentials = None
+        yt = None
         
         try :
             gtoken_info = eval(user.profile.gcreds)#change name
         except:
             pass    
         
-        credentials, yt = '',''
-        if(gtoken_info):
+        if gtoken_info:
             exp = parser.parse(gtoken_info['expiry'])
             #print(exp)
             credentials = Credentials(token = gtoken_info['token'],
@@ -75,13 +71,15 @@ def home_view(request):
             yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
         
         if yt:
+            context['ytlists'] = {}
+            context['id'] = []
             req = yt.playlists().list(part="contentDetails,snippet",maxResults=25,mine=True)
             ytlists = req.execute()
-            context['ytlists'] = {}
             next_page = ytlists.get('nextPageToken')
             if not ytlists['items']:
                 context['ytlists'] = {'Could not find any playlists':'Err'}#handle this
             for ytlist in ytlists['items']:
+                context['id'].append(ytlist["id"])
                 context['ytlists'][ytlist['snippet']['title']] = {}
                 req = yt.playlistItems().list(
                     part="snippet",
@@ -104,8 +102,6 @@ def home_view(request):
                     for item in res['items']:
                         i += 1
                         context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
-
-
 
             while(next_page):
                 req = yt.playlists().list(part="contentDetails,snippet",
@@ -155,6 +151,7 @@ def home_view(request):
                 access_token = token_info['access_token']
 
         if access_token:
+            context['playlists'] = {}
             sp = spotipy.Spotify(access_token)
             spuser = sp.current_user()
             playlists = sp.user_playlists(spuser['id'])
@@ -177,8 +174,15 @@ def home_view(request):
                             context['playlists'][playlist['name']][i+1] = track['name'] 
 
     #context['ctx'] = context
+    context['id'] = iter(context['id'])
     return render(request, 'home.html', context=context)
 
+def yt_playlist(request, playlist_id):
+    user = User.objects.get(username=request.user)
+    user.profile.playlistid = playlist_id
+    user.save()
+
+    return redirect('home')
 
 @login_required(login_url='login')
 def google(request):
@@ -317,8 +321,8 @@ def callback(request):
 @login_required(login_url='login')
 def update_profile(request):#for testing ,to-do handle this
     user = User.objects.get(username=request.user)
-    user.profile.creds = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit...'
-    user.profile.gcreds = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit...'
+    user.profile.creds = None
+    user.profile.gcreds = None
     user.save()
     return redirect('home')
 
