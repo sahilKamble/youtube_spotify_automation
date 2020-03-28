@@ -27,6 +27,7 @@ SPOTIPY_CLIENT_SECRET = '53bad3d05cd948eeb8e5f7c72cf7d0db'
 SPOTIPY_REDIRECT_URI = 'http://127.0.0.1:8000/callback/'
 SCOPE = 'playlist-modify-public,playlist-modify-private'
 
+@login_required(login_url='login')
 def home_view(request):
     context = {}
 
@@ -146,18 +147,19 @@ def home_view(request):
             if not playlists['items']:
                 context['playlists'] = {'Could not find any playlists':'Err'}#handle this
             for playlist in playlists['items']:
-                context['playlists'][playlist['id']] = {'name':playlist['name']}
-                results = sp.playlist(playlist['id'], fields="tracks,next")
-                tracks = results['tracks']
-                context['playlists'][playlist['id']]['tracks'] = []
-                for item in tracks['items']:
-                    track = item['track']
-                    context['playlists'][playlist['id']]['tracks'].append(track['name']) 
-                while tracks['next']:
-                    tracks = sp.next(tracks)
+                if playlist['owner']['id'] == spuser['id']:
+                    context['playlists'][playlist['id']] = {'name':playlist['name']}
+                    results = sp.playlist(playlist['id'], fields="tracks,next")
+                    tracks = results['tracks']
+                    context['playlists'][playlist['id']]['tracks'] = []
                     for item in tracks['items']:
                         track = item['track']
-                        context['playlists'][playlist['id']]['tracks'].append(track['name'])
+                        context['playlists'][playlist['id']]['tracks'].append(track['name']) 
+                    while tracks['next']:
+                        tracks = sp.next(tracks)
+                        for item in tracks['items']:
+                            track = item['track']
+                            context['playlists'][playlist['id']]['tracks'].append(track['name'])
             if user.profile.spid in context['playlists']:
                 context['sp_tracking'] = context['playlists'][user.profile.spid]['name']
 
