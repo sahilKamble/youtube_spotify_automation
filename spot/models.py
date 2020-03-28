@@ -9,9 +9,6 @@ class Profile(models.Model):
     gcreds = models.CharField(max_length=999, blank=True, null=True)
     ytid = models.CharField(max_length=99, null=True)
     spid = models.CharField(max_length=99, null=True)
-
-
-    playlistid = models.CharField(max_length=999, blank=True, null=True)
     
     def __str__(self):
         return self.user.username
@@ -26,7 +23,8 @@ def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
 
 class YtTrack(models.Model):
-    vidid = models.CharField(max_length=99)
+    vidid = models.CharField(max_length=99, null=True)
+    spid = models.CharField(max_length=99, null=True)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
 
     def __str__(self):
