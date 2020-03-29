@@ -12,11 +12,11 @@
     </div>
 </div>
 
+{% if yt_tracking and sp_tracking %}
 <div class="card card-body">
-    {% if yt_tracking and sp_tracking %}
-            <a class="btn btn-success" href="{% url 'update_list'%}">Add tracks from Youtube playlist to spotify playlist</a>
-    {% endif %}
+            <a class="btn btn-success" href="{% url 'update_list'%}">Add tracks from YouTube playlist to Spotify playlist</a>
 </div>
+{% endif %}
 
 {% if not playlists or not ytlists%}
 <div class="card">
