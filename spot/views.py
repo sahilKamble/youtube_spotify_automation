@@ -18,7 +18,7 @@ import youtube_dl
 from .models import YtTrack
 
 CLIENT_SECRETS_FILE = "client_secret.json"
-SCOPES = ['https://www.googleapis.com/auth/youtube']
+SCOPES = ['https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/userinfo.profile email']
 API_SERVICE_NAME = 'youtube'
 API_VERSION = 'v3'
 
@@ -163,6 +163,11 @@ def home_view(request):
             if user.profile.spid in context['playlists']:
                 context['sp_tracking'] = context['playlists'][user.profile.spid]['name']
 
+    if user.profile.gcreds:
+        info = build('oauth2', 'v2', credentials=credentials)
+        if info:
+            info_res = info.userinfo().get().execute()
+            print(info_res)
     #context['ctx'] = context
     # context['id'] = iter(context['id'])
     return render(request, 'home.html', context=context)
@@ -211,8 +216,8 @@ def create_playlist(request):
 @login_required(login_url='login')
 def google(request):
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-    'client_secret.json',
-    ['https://www.googleapis.com/auth/youtube'])
+        'client_secret.json',
+        SCOPES)
 
     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
 
