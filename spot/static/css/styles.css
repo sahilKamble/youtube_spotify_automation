@@ -10,3 +10,7 @@ body {
 .no-padding {
     padding: 0px;
 }
+
+.btn {
+    margin: 5px 5px 5px 0px;
+}
