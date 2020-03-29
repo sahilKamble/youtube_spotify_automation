@@ -1,0 +1,12 @@
+body {
+    background-color: #f1f1f1;
+}
+
+.card {
+    margin: 1% 25%;
+    /* text-align: center; */
+}
+
+.no-padding {
+    padding: 0px;
+}

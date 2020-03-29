@@ -1,64 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-</head>
-<body>
+{% extends 'main.html' %}
+{% block content %}
 
-    <h1>Home Page</h1>
-    {% if user.is_authenticated %}
-        <h2>Hello, {{user.username}}</h2>
+{% if user.is_authenticated %}
+<div class="card">
+    <div class="card-body">
+        
+        Select by clicking on title of your playlists, currently tracking :<br>
+        Youtube playlist :  {{ yt_tracking }}<br>
+        Spotify playlist :   {{ sp_tracking }}<br>
+        {% if yt_tracking and sp_tracking %}
+            <a href="{% url 'update_list'%}">Add</a> tracks from Youtube playlist to spotify playlist
+        {% endif %}
 
-        <div>
-            Select by clicking on title of your playlists, curently tracking :<br>
-            Youtube playlist :  {{ yt_tracking }}<br>
-            Spotify playlist :   {{ sp_tracking }}<br>
-            {% if yt_tracking and sp_tracking %}
-                <a href="{% url 'update_list'%}">Add</a> tracks from Youtube playlist to spotify playlist
+    </div>
+</div>
+
+{% if not playlists or not ytlists%}
+<div class="card">
+    <div class="card-body mx-auto">
+        <div class="row">
+            {% if not playlists %}
+            <div class="col-sm-6">
+                    <a class="btn btn-success" href="{% url 'spotify' %}"><i class="fab fa-spotify"></i> Get Spotify Playlists</a> <br>
+            </div>
             {% endif %}
-
+            {% if not ytlists %}
+            <div class="col-sm-6">
+                    <a class="btn btn-danger" href="{% url 'google' %}"><i class="fab fa-youtube"></i> Get Youtube playlists</a> <br>
+            </div>
+            {% endif %}
         </div>
-        {% if playlists %}
-            <h4>Here's your Spotify playlists</h4>
-            <ul>
-            {% for key, playlist in playlists.items %}
-                <li><a href="{% url 'sp_playlist' key %}">{{ playlist.name }}</a></li>
-                <ul>
-                {% for track in playlist.tracks %}
-                    <li>{{ track }}</li>
-                {% endfor %}
-                </ul>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+    {% if playlists %}
+        <h4>Here's your Spotify playlists</h4><br>
+        <ul class="list-group">
+        {% for key, playlist in playlists.items %}
+            <li class="list-group-item no-padding"><a class="btn btn-primary btn-block" href="{% url 'sp_playlist' key %}">{{ playlist.name }}</a></li>
+            <div>
+            <ul class="list-group">
+            {% for track in playlist.tracks %}
+                <li class="list-group-item">{{ track }}</li>
             {% endfor %}
             </ul>
-        {% else %}
-            <a href="{% url 'spotify' %}">Get Spotify Playlists</a> <br>
-        {% endif %}
-
-        {% if ytlists %}
-            <h4>Here's your Youtube playlists</h4>
-            <ul>
-            {% for key, playlist in ytlists.items %}
-                <li><a href="{% url 'yt_playlist' key %}">{{ playlist.name }}</a></li>
-                <ul>
-                {% for track in playlist.tracks %}
-                    <li>{{ track }}</li>
-                {% endfor %}
-                </ul>
-            {% endfor %}
-            </ul><br>
-        
-        <a href="{% url 'create_playlist' %}">Create New Playlist Instead</a><br>
-        {% else %}
-            <a href="{% url 'google' %}">Get Youtube playlists</a> <br>
-        {% endif %}
-        <a href="{% url 'update' %}">Scratch credentials</a><br>
-        <a href="{% url 'logout' %}">Logout</a>
-    {% else %}
-        <a href="{% url 'signup' %}">Signup</a><br>
-        <a href="{% url 'login' %}">Login</a><br>
+        {% endfor %}
+        </ul>
     {% endif %}
+
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+    <div>
+    </div>
+  
+    {% if ytlists %}
+        <h4>Here's your Youtube playlists</h4>
+        <ul>
+        {% for key, playlist in ytlists.items %}
+            <li><a href="{% url 'yt_playlist' key %}">{{ playlist.name }}</a></li>
+            <ul>
+            {% for track in playlist.tracks %}
+                <li>{{ track }}</li>
+            {% endfor %}
+            </ul>
+        {% endfor %}
+        </ul><br>
     
-</body>
-</html>
+    <a href="{% url 'create_playlist' %}">Create New Playlist Instead</a><br>
+    {% endif %}
+    <a href="{% url 'update' %}">Scratch credentials</a><br>
+{% else %}
+    <a href="{% url 'signup' %}">Signup</a><br>
+    <a href="{% url 'login' %}">Login</a><br>
+{% endif %}
+  </div>
+</div>
+{% endblock %}
