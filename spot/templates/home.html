@@ -22,7 +22,7 @@
 <div class="card">
     <div class="card-body mx-auto">
         <div class="row">
-            {% if not playlists %}
+            {% if not playlists %}  
             <div class="col-sm-6">
                     <a class="btn btn-success" href="{% url 'spotify' %}"><i class="fab fa-spotify"></i> Get Spotify Playlists</a> <br>
             </div>
@@ -37,57 +37,65 @@
     </div>
 </div>
 {% endif %}
-
-{% if playlists %}
-<div class="card">
+<div class="card playlist-margin">
     <div class="card-body">
-        <h4>Here's your Spotify playlists</h4><br>
-        {% for key, playlist in playlists.items %}
         <div class="row">
-            <div class="col">
-                <a class="btn btn-dark" data-toggle="collapse" href="#{{ key }}">{{ playlist.name }}</a>
-                <a class="btn btn-primary" href="{% url 'sp_playlist' key %}"><i class="fas fa-check"></i></a>
-                <div id="{{ key }}" class="panel-collapse collapse">
-                    <ul class="list-group">
-                    {% for track in playlist.tracks %}
-                        <li class="list-group-item">{{ track }}</li>
-                    {% endfor %}
-                    </ul><br>
+            {% if playlists %}
+            <div class="col-md">
+                <div class="card no-margin h-100">
+                    <div class="card-header">
+                        <h4>Here's your Spotify playlists</h4>
+                    </div>
+                    <div class="card-body">
+                        {% for key, playlist in playlists.items %}
+                        <div class="row">
+                            <div class="col">
+                                <a class="btn btn-dark" data-toggle="collapse" href="#{{ key }}">{{ playlist.name }}</a>
+                                <a class="btn btn-primary" href="{% url 'sp_playlist' key %}"><i class="fas fa-check"></i></a>
+                                <div id="{{ key }}" class="panel-collapse collapse">
+                                    <ul class="list-group">
+                                    {% for track in playlist.tracks %}
+                                        <li class="list-group-item">{{ track }}</li>
+                                    {% endfor %}
+                                    </ul><br>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
+            {% endif %}
+            {% if ytlists %}
+            <div class="col-md">
+                <div class="card no-margin h-100">
+                    <div  class="card-header">
+                        <h4>Here's your Youtube playlists</h4>
+                    </div>
+                    <div class="card-body">
+                        {% for key, playlist in ytlists.items %}
+                        <div class="row">
+                            <div class="col">
+                                <a class="btn btn-dark" data-toggle="collapse" href="#{{ key }}">{{ playlist.name }}</a>
+                                <a class="btn btn-primary" href="{% url 'yt_playlist' key %}"><i class="fas fa-check"></i></a>
+                                <div id="{{ key }}" class="panel-collapse collapse">
+                                    <ul class="list-group">
+                                    {% for track in playlist.tracks %}
+                                        <li class="list-group-item">{{ track }}</li>
+                                    {% endfor %}
+                                    </ul><br>
+                                </div>
+                            {% endfor %}
+                            </div><br>
+                        </div> 
+                    <a class="btn btn-danger" href="{% url 'create_playlist' %}">Create New Playlist Instead</a><br>
+                    <a href="{% url 'update' %}">Scratch credentials</a><br>
+                    </div>
+                    </div>
+                </div>
+                {% endif %}
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endif %}
-
-{% if ytlists %}
-<div class="card">
-    <div class="card-body">
-  
-        <h4>Here's your Youtube playlists</h4>
-        {% for key, playlist in ytlists.items %}
-        <div class="row">
-            <div class="col">
-                <a class="btn btn-dark" data-toggle="collapse" href="#{{ key }}">{{ playlist.name }}</a>
-                <a class="btn btn-primary" href="{% url 'yt_playlist' key %}"><i class="fas fa-check"></i></a>
-                <div id="{{ key }}" class="panel-collapse collapse">
-                    <ul class="list-group">
-                    {% for track in playlist.tracks %}
-                        <li class="list-group-item">{{ track }}</li>
-                    {% endfor %}
-                    </ul><br>
-                </div>
-            {% endfor %}
-    <br>
-
-{% endif %}
-{% else %}
-    <a href="{% url 'account_signup' %}">Signup</a><br>
-    <a href="{% url 'account_login' %}">Login</a><br>
-{% endif %}
-<a class="btn btn-danger" href="{% url 'create_playlist' %}">Create New Playlist Instead</a><br>
-<a href="{% url 'update' %}">Scratch credentials</a><br>
-  </div>
-</div>
 {% endblock %}
