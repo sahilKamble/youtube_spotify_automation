@@ -29,7 +29,8 @@
             {% endif %}
             {% if not ytlists %}
             <div class="col-sm-6">
-                    <a class="btn btn-danger" href="{% url 'google' %}"><i class="fab fa-youtube"></i> Get Youtube playlists</a> <br>
+                    {% load socialaccount %}
+                    <a class="btn btn-danger" href="{% provider_login_url 'google' process='connect' next='/' %}"><i class="fab fa-youtube"></i>Get Youtube playlists</a> <br>
             </div>
             {% endif %}
         </div>
@@ -79,14 +80,14 @@
                 </div>
             {% endfor %}
     <br>
-    <a class="btn btn-danger" href="{% url 'create_playlist' %}">Create New Playlist Instead</a><br>
-    <a href="{% url 'update' %}">Scratch credentials</a><br>
 
 {% endif %}
 {% else %}
-    <a href="{% url 'signup' %}">Signup</a><br>
-    <a href="{% url 'login' %}">Login</a><br>
+    <a href="{% url 'account_signup' %}">Signup</a><br>
+    <a href="{% url 'account_login' %}">Login</a><br>
 {% endif %}
+<a class="btn btn-danger" href="{% url 'create_playlist' %}">Create New Playlist Instead</a><br>
+<a href="{% url 'update' %}">Scratch credentials</a><br>
   </div>
 </div>
 {% endblock %}

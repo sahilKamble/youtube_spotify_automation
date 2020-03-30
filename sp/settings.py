@@ -18,9 +18,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
-    'spot'
+    'spot',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -124,3 +131,11 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
 DNS = '8.8.8.8'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE' : ['https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/userinfo.profile email'],
+        'AUTH_PARAMS' : {'access_type' : 'offline'},
+        'METHOD' : 'oauth2',
+    }
+}
