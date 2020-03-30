@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
+from django.conf import settings
 import spotipy
 from spotipy import oauth2
 import google.oauth2.credentials
@@ -11,13 +12,11 @@ from google.oauth2.credentials import Credentials
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
-from allauth.socialaccount.models import SocialToken
+from allauth.socialaccount.models import SocialToken, SocialApp
 from dateutil import parser
 import youtube_dl
 
-
 from .models import YtTrack
-
 
 
 TOKEN_URI = 'https://oauth2.googleapis.com/token'
@@ -26,10 +25,10 @@ SCOPES = ['https://www.googleapis.com/auth/youtube https://www.googleapis.com/au
 API_SERVICE_NAME = 'youtube'
 API_VERSION = 'v3'
 
-SPOTIPY_CLIENT_ID = '71f415cec4364aa1acbf7c28b53d4f79'
-SPOTIPY_CLIENT_SECRET = '53bad3d05cd948eeb8e5f7c72cf7d0db'
-SPOTIPY_REDIRECT_URI = 'http://127.0.0.1:8000/callback/'
-SCOPE = 'playlist-modify-public,playlist-modify-private'
+SPOTIPY_CLIENT_ID = settings.SPOTIPY_CLIENT_ID
+SPOTIPY_CLIENT_SECRET = settings.SPOTIPY_CLIENT_SECRET
+SPOTIPY_REDIRECT_URI = settings.SPOTIPY_REDIRECT_URI
+SCOPE = settings.SPOTIPY_SCOPE
 
 # @login_required(login_url='login')
 def home_view(request):
@@ -53,32 +52,10 @@ def home_view(request):
         #         client_secret=gtoken_info['client_secret'])
         #     credentials.expiry = exp
         if SocialToken.objects.filter(account__user=user,account__provider='google').exists():
-            st = SocialToken.objects.get(account__user=user,account__provider='google')
-            # print(st.token_secret)
-            credentials = Credentials(token = st.token ,
-                refresh_token=st.token_secret,
-                token_uri=TOKEN_URI,
-                client_id='657509677837-t0e0uqsjuktvbv9qe2nhc9bevkdngvis.apps.googleusercontent.com',
-                client_secret='YLIEQgDKQrjgc7EI8fO7gg9J')
-            credentials.expiry = st.expires_at.replace(tzinfo=None)
-            if credentials.expired :
-                req = Request()
-                credentials.refresh(req)
-                # creds = None
-                # creds = {
-                #     'token': credentials.token,
-                #     'refresh_token': credentials.refresh_token,
-                #     'expiry': str(credentials.expiry), 
-                #     'token_uri': credentials.token_uri,
-                #     'client_id': credentials.client_id,
-                #     'client_secret': credentials.client_secret,
-                #     'scopes': credentials.scopes}
-                st.token = credentials.token
-                st.token_secret = credentials.refresh_token
-                st.save()
-            yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
+            credentials = get_credentials(user)
         
         if credentials:
+            yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
             context['ytlists'] = {}
             req = yt.playlists().list(part="contentDetails,snippet",maxResults=25,mine=True)
             ytlists = req.execute()
@@ -208,19 +185,7 @@ def create_playlist(request):
     user = User.objects.get(username=request.user)
     
     if SocialToken.objects.filter(account__user=user,account__provider='google').exists():
-        st = SocialToken.objects.get(account__user=user,account__provider='google')
-        credentials = Credentials(token = st.token ,
-            refresh_token=st.token_secret,
-            token_uri=TOKEN_URI,
-            client_id='657509677837-t0e0uqsjuktvbv9qe2nhc9bevkdngvis.apps.googleusercontent.com',
-            client_secret='YLIEQgDKQrjgc7EI8fO7gg9J')
-        credentials.expiry = st.expires_at.replace(tzinfo=None)
-        if credentials.expired:
-            req = Request()
-            credentials.refresh(req)
-            st.token = credentials.token
-            st.token_secret = credentials.refresh_token
-            st.save()
+        credentials = get_credentials(user)
         yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
 
         req = yt.playlists().insert(
@@ -306,15 +271,11 @@ def callback(request):
     sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)#to-do handle this better, make object global??
     url = request.build_absolute_uri() 
     code = sp_oauth.parse_response_code(str(url))
-    if code:
-        token_info = sp_oauth.get_access_token(code, check_cache=False)
-        context['token_info'] = token_info
-        user.profile.creds = str(token_info)
-        user.save()
-        access_token = token_info['access_token']
-    else:
-        pass#important handle this
-
+    token_info = sp_oauth.get_access_token(code, check_cache=False)
+    context['token_info'] = token_info
+    user.profile.creds = str(token_info)
+    user.save()
+    access_token = token_info['access_token']
     return redirect('home')
 
 @login_required(login_url='login')
@@ -353,20 +314,7 @@ def update_list(request):
     sp = spotipy.Spotify(access_token)
     spid = []
 
-    st = SocialToken.objects.get(account__user=user,account__provider='google')
-    # print(st.token_secret)
-    credentials = Credentials(token = st.token ,
-        refresh_token=st.token_secret,
-        token_uri=TOKEN_URI,
-        client_id='657509677837-t0e0uqsjuktvbv9qe2nhc9bevkdngvis.apps.googleusercontent.com',
-        client_secret='YLIEQgDKQrjgc7EI8fO7gg9J')
-    credentials.expiry = st.expires_at.replace(tzinfo=None)
-    if credentials.expired  :
-        req = Request()
-        credentials.refresh(req)
-        st.token = credentials.token
-        st.token_secret = credentials.refresh_token
-        st.save()
+    credentials = get_credentials
     yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
     req = yt.playlistItems().list(
         part="snippet",
@@ -402,3 +350,30 @@ def update_list(request):
         sp.user_playlist_add_tracks(playlist_id=user.profile.spid,user=spuser['id'],tracks=spid)
 
     return redirect('home')
+
+
+def get_credentials(user):
+    st = SocialToken.objects.get(account__user=user,account__provider='google')
+    sa = SocialApp.objects.filter(provider='google').first()
+    credentials = Credentials(token = st.token ,
+        refresh_token = st.token_secret,
+        token_uri = TOKEN_URI,
+        client_id = sa.client_id,
+        client_secret = sa.secret)
+    credentials.expiry = st.expires_at.replace(tzinfo=None)
+    if credentials.expired :
+        req = Request()
+        credentials.refresh(req)
+        # creds = None
+        # creds = {
+        #     'token': credentials.token,
+        #     'refresh_token': credentials.refresh_token,
+        #     'expiry': str(credentials.expiry), 
+        #     'token_uri': credentials.token_uri,
+        #     'client_id': credentials.client_id,
+        #     'client_secret': credentials.client_secret,
+        #     'scopes': credentials.scopes}
+        st.token = credentials.token
+        st.token_secret = credentials.refresh_token
+        st.save()
+    return credentials

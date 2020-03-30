@@ -139,3 +139,8 @@ SOCIALACCOUNT_PROVIDERS = {
         'METHOD' : 'oauth2',
     }
 }
+
+SPOTIPY_CLIENT_ID = '71f415cec4364aa1acbf7c28b53d4f79'
+SPOTIPY_CLIENT_SECRET = '53bad3d05cd948eeb8e5f7c72cf7d0db'
+SPOTIPY_REDIRECT_URI = 'http://127.0.0.1:8000/callback/'
+SPOTIPY_SCOPE = 'playlist-modify-public,playlist-modify-private'
