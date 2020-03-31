@@ -61,7 +61,8 @@ def home_view(request):
             ytlists = req.execute()
             next_page = ytlists.get('nextPageToken')
             if not ytlists['items']:
-                context['ytlists'] = {'None':'Could not find any playlist'}#handle this
+                context['ytlists'] =  {'None':
+                    {'name':'Could not find any playlist'}}
             for ytlist in ytlists['items']:
                 context['ytlists'][ytlist['id']] = {'name':ytlist['snippet']['title']}
                 req = yt.playlistItems().list(
@@ -137,7 +138,8 @@ def home_view(request):
             playlists = sp.user_playlists(spuser['id'])
             context['playlists'] = {}
             if not playlists['items']:
-                context['playlists'] =  {'None':'Could not find any playlist'}#handle this
+                context['playlists'] =  {'None':
+                    {'name':'Could not find any playlist'}}#handle this
             for playlist in playlists['items']:
                 if playlist['owner']['id'] == spuser['id']:
                     context['playlists'][playlist['id']] = {'name':playlist['name']}
@@ -279,12 +281,13 @@ def callback(request):
     return redirect('home')
 
 @login_required(login_url='login')
-def update_profile(request):#for testing ,to-do handle this
-    user = User.objects.get(username=request.user)
-    user.profile.creds = None
-    # user.profile.gcreds = None
-    user.save()
-    return redirect('home')
+def scratch_creds(request):
+    if request.method == "POST":
+        user = User.objects.get(username=request.user)
+        user.profile.creds = None
+        user.save()
+        return redirect('home')
+    return render(request, "scratch.html")
 
 # def signup_view(request):
 #     form = UserCreationForm(request.POST)

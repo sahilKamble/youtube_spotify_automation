@@ -9,7 +9,7 @@ urlpatterns = [
     path('', home_view, name="home"),
     path('home/', home_view, name="home"),
     # path('signup/', signup_view, name="signup"),
-    path('update/', update_profile, name="update"),
+    path('update/', scratch_creds, name="scratch"),
     # path('login/', auth_views.LoginView.as_view(template_name='ex/login.html'), name='login'),
     # path('accounts/', include('django.contrib.auth.urls')),
     path('spotify/', spotify, name='spotify'),

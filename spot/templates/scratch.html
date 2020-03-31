@@ -1,0 +1,11 @@
+  
+{% extends 'main.html' %}
+{% block content %}
+
+<form action='.' method='POST'>
+    {% csrf_token %}
+    <h1>Use differnt Spotify accont ?</h1>
+    <p><input type='submit' value='Yes' />  <a href='../'>Cancel</a></p>
+</form>
+
+{% endblock %}
