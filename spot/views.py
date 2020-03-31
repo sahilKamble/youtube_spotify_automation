@@ -41,16 +41,6 @@ def home_view(request):
         credentials = None
         yt = None
 
-        #make all this a seperate task
-        # if user.profile.gcreds:
-        #     gtoken_info = eval(user.profile.gcreds)#change name#Handle this
-        #     exp = parser.parse(gtoken_info.get('expiry'))
-        #     credentials = Credentials(token = gtoken_info['token'],
-        #         refresh_token=gtoken_info['refresh_token'],
-        #         token_uri=gtoken_info['token_uri'],
-        #         client_id=gtoken_info['client_id'],
-        #         client_secret=gtoken_info['client_secret'])
-        #     credentials.expiry = exp
         if SocialToken.objects.filter(account__user=user,account__provider='google').exists():
             credentials = get_credentials(user)
         
@@ -157,14 +147,6 @@ def home_view(request):
             if user.profile.spid in context['playlists']:
                 context['sp_tracking'] = context['playlists'][user.profile.spid]['name']
 
-    # if user.profile.gcreds:
-    #     credentials = eval(user.profile.gcreds)
-    #     info = build('oauth2', 'v2', credentials=credentials)
-    #     if info:
-    #         info_res = info.userinfo().get().execute()
-    #         print(info_res)
-    #context['ctx'] = context
-    # context['id'] = iter(context['id'])
     return render(request, 'home.html', context=context)
 
 def yt_playlist(request, playlist_id):
@@ -184,9 +166,9 @@ def sp_playlist(request, playlist_id):
     return redirect('home')
 
 def create_playlist(request):
-    user = User.objects.get(username=request.user)
-    
-    if SocialToken.objects.filter(account__user=user,account__provider='google').exists():
+    print(request.method)
+    if request.method == "POST":
+        user = User.objects.get(username=request.user)
         credentials = get_credentials(user)
         yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
 
@@ -199,71 +181,20 @@ def create_playlist(request):
                 }
             }
         )
-        response = req.execute()
-        id = response["id"]
-        user.profile.playlistid = id
+        res = req.execute()
+        playlistid = res["id"]
+        user.profile.ytid = playlistid
         user.save()
+        return redirect('home')
 
-    return redirect('home')
+    return render(request,'new_playlist.html')
 
-# @login_required(login_url='login')
-# def google(request):
-#     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-#         'client_secret.json',
-#         SCOPES)
 
-#     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
-
-#     authorization_url, state = flow.authorization_url(
-#         access_type='offline',
-#         include_granted_scopes='true')
-
-#     return redirect(authorization_url)
 
 @login_required(login_url='login')
 def spotify(request):
     sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, show_dialog=True)
     return redirect(sp_oauth.get_authorize_url())
-
-# def oauth2callback(request):
-
-#     #to do This->Note that you should do some error handling here incase its not a valid token.
-#     state = request.GET.get('state',None)
-#     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-#         'client_secret.json',
-#         SCOPES,
-#         state = state)#To do handle this giving scopes error
-
-#     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
-
-#     url = request.build_absolute_uri() 
-#     flow.fetch_token(authorization_response=url)
-#     credentials = flow.credentials
-#     creds = dict()
-#     if credentials:
-#         creds = {
-#             'token': credentials.token,
-#             'refresh_token': credentials.refresh_token,
-#             'expiry': str(credentials.expiry), 
-#             'token_uri': credentials.token_uri,
-#             'client_id': credentials.client_id,
-#             'client_secret': credentials.client_secret,
-#             'scopes': credentials.scopes}
-
-#         user = User.objects.get(username=request.user)
-#         user.profile.gcreds = str(creds)
-#         user.save()
-
-#     #     info = build('oauth2', 'v2', credentials=credentials)
-#     #     if info:
-#     #         info_res = info.userinfo().get().execute()
-#     #         print(info_res)
-
-#     #     token_info = eval(user.profile.gcreds)
-#     # else:
-#     #     HttpResponse("Could not fetch token go to 'home' and try again")
-
-#     return redirect('home')
 
 
 @login_required(login_url='login')
@@ -289,16 +220,6 @@ def scratch_creds(request):
         return redirect('home')
     return render(request, "scratch.html")
 
-# def signup_view(request):
-#     form = UserCreationForm(request.POST)
-#     if form.is_valid():
-#         form.save()
-#         username = form.cleaned_data.get('username')
-#         password = form.cleaned_data.get('password1')
-#         user = authenticate(username=username, password=password)
-#         login(request, user)
-#         return redirect('home')
-#     return render(request, 'signup.html', {'form': form})
 
 @login_required(login_url='login')
 def update_list(request):
@@ -380,3 +301,71 @@ def get_credentials(user):
         st.token_secret = credentials.refresh_token
         st.save()
     return credentials
+
+
+
+
+# @login_required(login_url='login')
+# def google(request):
+#     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
+#         'client_secret.json',
+#         SCOPES)
+
+#     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
+
+#     authorization_url, state = flow.authorization_url(
+#         access_type='offline',
+#         include_granted_scopes='true')
+
+#     return redirect(authorization_url)
+
+# def signup_view(request):
+#     form = UserCreationForm(request.POST)
+#     if form.is_valid():
+#         form.save()
+#         username = form.cleaned_data.get('username')
+#         password = form.cleaned_data.get('password1')
+#         user = authenticate(username=username, password=password)
+#         login(request, user)
+#         return redirect('home')
+#     return render(request, 'signup.html', {'form': form})
+
+# def oauth2callback(request):
+
+#     #to do This->Note that you should do some error handling here incase its not a valid token.
+#     state = request.GET.get('state',None)
+#     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
+#         'client_secret.json',
+#         SCOPES,
+#         state = state)#To do handle this giving scopes error
+
+#     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
+
+#     url = request.build_absolute_uri() 
+#     flow.fetch_token(authorization_response=url)
+#     credentials = flow.credentials
+#     creds = dict()
+#     if credentials:
+#         creds = {
+#             'token': credentials.token,
+#             'refresh_token': credentials.refresh_token,
+#             'expiry': str(credentials.expiry), 
+#             'token_uri': credentials.token_uri,
+#             'client_id': credentials.client_id,
+#             'client_secret': credentials.client_secret,
+#             'scopes': credentials.scopes}
+
+#         user = User.objects.get(username=request.user)
+#         user.profile.gcreds = str(creds)
+#         user.save()
+
+#     #     info = build('oauth2', 'v2', credentials=credentials)
+#     #     if info:
+#     #         info_res = info.userinfo().get().execute()
+#     #         print(info_res)
+
+#     #     token_info = eval(user.profile.gcreds)
+#     # else:
+#     #     HttpResponse("Could not fetch token go to 'home' and try again")
+
+#     return redirect('home')
