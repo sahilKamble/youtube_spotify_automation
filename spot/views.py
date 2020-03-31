@@ -191,19 +191,21 @@ def create_playlist(request):
 
 
 
-@login_required(login_url='login')
+@login_required
 def spotify(request):
     sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE, show_dialog=True)
     return redirect(sp_oauth.get_authorize_url())
 
 
-@login_required(login_url='login')
+@login_required
 def callback(request):
     context = {}
     user = User.objects.get(username=request.user)
     sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)#to-do handle this better, make object global??
     url = request.build_absolute_uri() 
     code = sp_oauth.parse_response_code(str(url))
+    if code is None:
+        return redirect('home')
     token_info = sp_oauth.get_access_token(code, check_cache=False)
     context['token_info'] = token_info
     user.profile.creds = str(token_info)
@@ -211,17 +213,17 @@ def callback(request):
     access_token = token_info['access_token']
     return redirect('home')
 
-@login_required(login_url='login')
+@login_required
 def scratch_creds(request):
     if request.method == "POST":
         user = User.objects.get(username=request.user)
         user.profile.creds = None
         user.save()
-        return redirect('home')
+        return redirect('home') 
     return render(request, "scratch.html")
 
 
-@login_required(login_url='login')
+@login_required
 def update_list(request):
     user = User.objects.get(username=request.user)
 

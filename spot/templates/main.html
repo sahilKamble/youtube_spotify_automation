@@ -21,24 +21,43 @@
             <li class="nav-item active">
               <a class="nav-link" href="{% url 'home' %}">Home <span class="sr-only">(current)</span></a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">Features</a>
-            </li>
-            <li class="nav-item">
-            </li>
           </ul>
           <ul class="navbar-nav ml-auto">
             {% if user.is_authenticated %}
             <li class="nav-item">
-                <a class="nav-link" href="#">Hello, {{user.username}}</a>
+                <a class="nav-link" href="#">Hello, {{user.username.capitalize}}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
+                <a class="nav-link" href="" data-toggle="modal" data-target="#logout-modal">Logout</a>
             {% endif%}
             </li>
           </ul>
         </div>
       </nav>
+            <!-- Modal -->
+      <div class="modal fade" id="logout-modal" tabindex="-1" role="dialog" aria-labelledby="LogoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="LogoutModalLabel">Are you sure you want to Log out?</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-footer">
+              {% load i18n %}
+              <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+              <form method="post" action="{% url 'account_logout' %}">
+                {% csrf_token %}
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                {% endif %}
+                <button class="btn btn-danger" type="submit">{% trans 'Log Out' %}</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     
     {% block content  %}
     {% endblock %}
