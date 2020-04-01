@@ -312,7 +312,6 @@ def update_sp_list(request):
     res = sp.playlist_tracks(user.profile.curr_sp_playlistid,fields="items(track(name,id))")
     
     for track in res['items']:
-        print(track)
         if not user.profile.sptrack_set.filter(trackid=track['track']['id'],yt_playlistid=user.profile.curr_sp_playlistid).exists() :
                 req = yt.search().list(
                     part="snippet",
