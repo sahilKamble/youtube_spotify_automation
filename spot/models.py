@@ -7,8 +7,8 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     creds = models.CharField(max_length=999, blank=True, null=True)
     # gcreds = models.CharField(max_length=999, blank=True, null=True)
-    ytid = models.CharField(max_length=99, null=True)
-    spid = models.CharField(max_length=99, null=True)
+    curr_yt_playlistid = models.CharField(max_length=99, null=True)
+    curr_sp_playlistid = models.CharField(max_length=99, null=True)
     
     def __str__(self):
         return self.user.username
@@ -24,9 +24,16 @@ def save_user_profile(sender, instance, **kwargs):
 
 class YtTrack(models.Model):
     vidid = models.CharField(max_length=99, null=True)
-    spid = models.CharField(max_length=99, null=True)
+    sp_playlistid = models.CharField(max_length=99, null=True)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.vidid
 
+class SpTrack(models.Model):
+    trackid = models.CharField(max_length=99, null=True)
+    yt_playlistid = models.CharField(max_length=99, null=True)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+
+    def __str__(self):
+            return self.trackid

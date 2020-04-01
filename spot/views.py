@@ -16,7 +16,7 @@ from allauth.socialaccount.models import SocialToken, SocialApp
 from dateutil import parser
 import youtube_dl
 
-from .models import YtTrack
+from .models import YtTrack,SpTrack
 
 
 TOKEN_URI = 'https://oauth2.googleapis.com/token'
@@ -104,8 +104,8 @@ def home_view(request):
                         for item in res['items']:
                             i += 1
                             context['ytlists'][ytlist['snippet']['title']][i] = item['snippet']['title']
-            if user.profile.ytid in context['ytlists']:
-                context['yt_tracking'] = context['ytlists'][user.profile.ytid]['name']
+            if user.profile.curr_yt_playlistid in context['ytlists']:
+                context['yt_tracking'] = context['ytlists'][user.profile.curr_yt_playlistid]['name']
 
         access_token = None
         token_info = None
@@ -133,19 +133,14 @@ def home_view(request):
             for playlist in playlists['items']:
                 if playlist['owner']['id'] == spuser['id']:
                     context['playlists'][playlist['id']] = {'name':playlist['name']}
-                    results = sp.playlist(playlist['id'], fields="tracks,next")
-                    tracks = results['tracks']
+                    tracks = sp.playlist_tracks(user.profile.curr_sp_playlistid,fields="items(track(name))")
                     context['playlists'][playlist['id']]['tracks'] = []
-                    for item in tracks['items']:
+                    for item in tracks['items'] :
                         track = item['track']
                         context['playlists'][playlist['id']]['tracks'].append(track['name']) 
-                    while tracks['next']:
-                        tracks = sp.next(tracks)
-                        for item in tracks['items']:
-                            track = item['track']
-                            context['playlists'][playlist['id']]['tracks'].append(track['name'])
-            if user.profile.spid in context['playlists']:
-                context['sp_tracking'] = context['playlists'][user.profile.spid]['name']
+
+            if user.profile.curr_sp_playlistid in context['playlists']:
+                context['sp_tracking'] = context['playlists'][user.profile.curr_sp_playlistid]['name']
 
     return render(request, 'home.html', context=context)
 
@@ -153,7 +148,7 @@ def yt_playlist(request, playlist_id):
     if playlist_id == 'None':
         return redirect('home')
     user = User.objects.get(username=request.user)
-    user.profile.ytid = playlist_id
+    user.profile.curr_yt_playlistid = playlist_id
     user.save()
     return redirect('home')
 
@@ -161,33 +156,52 @@ def sp_playlist(request, playlist_id):
     if playlist_id == 'None':
         return redirect('home')
     user = User.objects.get(username=request.user)
-    user.profile.spid = playlist_id
+    user.profile.curr_sp_playlistid = playlist_id
     user.save()
     return redirect('home')
 
 def create_playlist(request):
-    print(request.method)
-    if request.method == "POST":
-        user = User.objects.get(username=request.user)
-        credentials = get_credentials(user)
-        yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
+    # print(request.method)
+    # if request.method == "POST":
+    user = User.objects.get(username=request.user)
+    credentials = get_credentials(user)
+    yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
 
-        req = yt.playlists().insert(
-            part="snippet",
-            body={
-            "snippet": {
-                "title": "test",
-                "description": "Playlist created by spotify automation app, add your songs here"
-                }
+    req = yt.playlists().insert(
+        part="snippet",
+        body={
+        "snippet": {
+            "title": "Spotify Tracks",
+            "description": "Playlist created by spotify automation app, add your songs here"
             }
-        )
-        res = req.execute()
-        playlistid = res["id"]
-        user.profile.ytid = playlistid
-        user.save()
-        return redirect('home')
+        }
+    )
+    res = req.execute()
+    playlistid = res["id"]
+    user.profile.curr_yt_playlistid = playlistid
+    user.save()
+    return redirect('home')
 
-    return render(request,'new_playlist.html')
+    # return render(request,'new_playlist.html')
+
+def create_sp_playlist(request):
+    user = User.objects.get(username=request.user)
+    if user.profile.creds:
+        token_info = eval(user.profile.creds)
+        sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)
+        if sp_oauth.is_token_expired(token_info):
+            token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+            user.profile.creds = str(token_info)
+            user.save()
+        
+        access_token = token_info['access_token']
+        sp = spotipy.Spotify(access_token)
+        spuser = sp.current_user()
+        print(spuser)
+        sp.user_playlist_create(user=spuser['id'],name='Youtube Tracks',
+           description='Playlist created by spotify automation app, add your songs here ')
+    return redirect('home')
+
 
 
 
@@ -238,21 +252,21 @@ def update_list(request):
     access_token = token_info['access_token']
 
     sp = spotipy.Spotify(access_token)
-    spid = []
+    # spid = []
 
-    credentials = get_credentials
+    credentials = get_credentials(user)
     yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
     req = yt.playlistItems().list(
         part="snippet",
-        playlistId=user.profile.ytid,
+        playlistId=user.profile.curr_yt_playlistid,
         maxResults=25)
     res = req.execute()
-    newtracks = list()
-
+    sp_new_traks = []
     for track in res['items']:
-        if user.profile.yttrack_set.filter(vidid=track['snippet']['resourceId']['videoId'],spid=user.profile.spid).exists() :
-            pass
-        else:
+        if not user.profile.yttrack_set.filter(
+            vidid=track['snippet']['resourceId']['videoId'],
+            sp_playlistid=user.profile.curr_sp_playlistid).exists() :
+
             newtrack = track['snippet']['resourceId']['videoId']
             youtube_url = "https://www.youtube.com/watch?v={}".format(newtrack)
             video = youtube_dl.YoutubeDL({}).extract_info(youtube_url, download=False)
@@ -266,15 +280,59 @@ def update_list(request):
                 spres = sp.search(q=name,limit=1)
 
             if spres and len(spres['tracks']['items']) > 0 :
-                spid.append(spres['tracks']['items'][0]['id'])
-                YtTrack.objects.create(vidid=track['snippet']['resourceId']['videoId'], spid=user.profile.spid, profile=user.profile)
+                sp_new_traks.append(spres['tracks']['items'][0]['id'])
+                YtTrack.objects.create(vidid=track['snippet']['resourceId']['videoId'], sp_playlistid=user.profile.curr_sp_playlistid, profile=user.profile)
             
 
     
     spuser = sp.current_user()
-    if len(spid) > 0:
-        sp.user_playlist_add_tracks(playlist_id=user.profile.spid,user=spuser['id'],tracks=spid)
+    if len(sp_new_traks) > 0:
+        sp.user_playlist_add_tracks(playlist_id=user.profile.curr_sp_playlistid,user=spuser['id'],tracks=sp_new_traks)
 
+    return redirect('home')
+
+def update_sp_list(request):
+    user = User.objects.get(username=request.user)
+
+    sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)
+    token_info = eval(user.profile.creds)
+    if sp_oauth.is_token_expired(token_info):
+        token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+        user.profile.creds = str(token_info)
+        user.save()
+
+    access_token = token_info['access_token']
+    sp = spotipy.Spotify(access_token)
+    credentials = get_credentials(user)
+    yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
+
+    yt_new_tracks = {}
+    sp = spotipy.Spotify(access_token)
+    spuser = sp.current_user()
+    res = sp.playlist_tracks(user.profile.curr_sp_playlistid,fields="items(track(name,id))")
+    
+    for track in res['items']:
+        print(track)
+        if not user.profile.sptrack_set.filter(trackid=track['track']['id'],yt_playlistid=user.profile.curr_sp_playlistid).exists() :
+                req = yt.search().list(
+                    part="snippet",
+                    maxResults=1,
+                    q=track['track']['name'],
+                    type="video",
+                    videoCategoryId="10"
+                )
+                res = req.execute()
+                if len(res['items']) > 0:    
+                    yt.playlistItems().insert(
+                        part="snippet",
+                        body={
+                            "snippet": {
+                                "playlistId": user.profile.curr_yt_playlistid,
+                                "resourceId": res['items'][0]['id'],
+                            }
+                        }
+                    ).execute()
+                    SpTrack.objects.create(trackid=track['track']['id'], yt_playlistid=user.profile.curr_yt_playlistid, profile=user.profile)    
     return redirect('home')
 
 
