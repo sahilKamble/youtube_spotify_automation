@@ -11,6 +11,75 @@ body {
     padding: 0px;
 }
 
-.btn {
-    margin: 5px 5px 5px 0px;
+.login-card {
+    margin: 0px;
+    text-align: center;
+    /* width: 300px; */
+    padding: 100px 0px;
+}
+
+.center {
+    margin-top: 10%;
+    margin-bottom: auto;
+    margin-left: 35%;
+    margin-right: 35%;
+    box-shadow: 0px 0px 50px 0px rgba(0,0,0,0.1);
+    border-radius: 5px;
+}
+
+.btn-lg {
+    width: 150px;
+}
+
+.wrap {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button {
+    width: 140px;
+    height: 45px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-weight: 500;
+    color: #000;
+    background-color: #fff;
+    border: none;
+    border-radius: 45px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+    outline: none;
+    margin-bottom: 15px;
+    padding: 0.8rem .75rem;
+}
+
+.button:hover {
+    background-color: #2EE59D;
+    box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
+    color: #fff;
+    transform: translateY(-7px);
+}
+
+.form-signin .form-control {
+    position: relative;
+    box-sizing: border-box;
+    height: auto;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.form-signin .form-control:focus {
+    z-index: 2;
+}
+
+.signup-card {
+    margin-top: 10%;
+    margin-bottom: auto;
+    box-shadow: 0px 0px 50px 0px rgba(0,0,0,0.1);
+    border-radius: 5px;
 }

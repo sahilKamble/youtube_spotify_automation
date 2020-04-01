@@ -161,28 +161,28 @@ def sp_playlist(request, playlist_id):
     return redirect('home')
 
 def create_playlist(request):
-    # print(request.method)
-    # if request.method == "POST":
-    user = User.objects.get(username=request.user)
-    credentials = get_credentials(user)
-    yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
+    if request.method == "POST":
+        yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
+        title =  request.POST['title']
+        description = request.POST['description']
 
-    req = yt.playlists().insert(
-        part="snippet",
-        body={
-        "snippet": {
-            "title": "Spotify Tracks",
-            "description": "Playlist created by spotify automation app, add your songs here"
+        req = yt.playlists().insert(
+            part="snippet",
+            body={
+            "snippet": {
+                "title": title,
+                "description": description
+                }
             }
-        }
-    )
-    res = req.execute()
-    playlistid = res["id"]
-    user.profile.curr_yt_playlistid = playlistid
-    user.save()
-    return redirect('home')
-
-    # return render(request,'new_playlist.html')
+        )
+        
+        res = req.execute()
+        playlistid = res["id"]
+        user = User.objects.get(username=request.user)
+        credentials = get_credentials(user)
+        user.profile.ytid = playlistid
+        user.save()
+        return redirect('home')
 
 def create_sp_playlist(request):
     user = User.objects.get(username=request.user)

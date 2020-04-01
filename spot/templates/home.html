@@ -46,9 +46,9 @@
         {% for key, playlist in playlists.items %}
         <div class="row">
             <div class="col">
-                <a class="btn btn-dark" data-toggle="collapse" href="#{{ key }}">{{ playlist.name }}</a>
+                <a class="btn btn-dark mb-2" data-toggle="collapse" href="#{{ key }}">{{ playlist.name }}</a>
                 {% if key != 'None'%}
-                <a class="btn btn-primary" href="{% url 'sp_playlist' key %}"><i class="fas fa-check"></i></a>
+                <a class="btn btn-primary align-top" href="{% url 'sp_playlist' key %}"><i class="fas fa-check"></i></a>
                 {% endif %}
                 <div id="{{ key }}" class="panel-collapse collapse">
                     <ul class="list-group">
@@ -93,13 +93,13 @@
 <div class="card">
     <div class="card-body">
   
-        <h4>Here's your Youtube playlists</h4>
+        <h4>Here's your Youtube playlists</h4><br>
         {% for key, playlist in ytlists.items %}
         <div class="row">
             <div class="col">
-                <a class="btn btn-dark" data-toggle="collapse" href="#{{ key }}">{{ playlist.name }}</a>
+                <a class="btn btn-dark mb-2" data-toggle="collapse" href="#{{ key }}">{{ playlist.name }}</a>
                 {% if key != 'None'%}
-                <a class="btn btn-primary" href="{% url 'yt_playlist' key %}"><i class="fas fa-check"></i></a>
+                <a class="btn btn-primary align-top" href="{% url 'yt_playlist' key %}"><i class="fas fa-check"></i></a>
                 {% endif %}
                 <div id="{{ key }}" class="panel-collapse collapse">
                     <ul class="list-group">
@@ -109,16 +109,52 @@
                     </ul><br>
                 </div>
             {% endfor %}
-    <br>
-    <a class="btn btn-danger" href="{% url 'create_playlist' %}">Create New Youtube Playlist Instead</a><br>
+    <br><br>
+    <!-- <a class="btn btn-danger" href="{% url 'create_playlist' %}">Create New Playlist Instead</a><br> -->
+    <button class="btn btn-danger" type="button" data-toggle="modal" data-target="#create-model">Create New Playlist Instead</button><br>
+
+
+    <div class="modal fade" id="create-model" tabindex="-1" role="dialog" aria-labelledby="CreateModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <form class="" action="{% url 'create_playlist' %}" method='POST'>
+                {% csrf_token %}
+            <div class="modal-body">
+                
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input class="form-control" type="text" id="title" name="title" value="Songs">
+                    </div>
+                    <div class="form-group">
+                        <label for="decsciption">Description</label>
+                        <input class="form-control" type="text" id="desrciption" name="description" value="Playlist created by spotify automation app, add your songs here">
+                    </div>
+            </div>
+            <div class="modal-footer">
+                    <input class="btn btn-primary" type="submit" value="Submit">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+        </form>
+          </div>
+        </div>
+      </div>
 
 {% endif %}
 {% else %}
-<div class="card card-body">
-    <div class="d-flex">
-        <a class="btn btn-outline-dark" href="{% url 'account_signup' %}">Signup</a><br>
-        <a class="btn btn-outline-dark" href="{% url 'account_login' %}">Login</a><br>
-    </div>
+<div class="row center">
+        <div class="card card-body login-card rounded-lg">
+            <div class="d-block wrap">
+                <a class="btn button" href="{% url 'account_signup' %}">Sign up</a>
+            </div>
+            <div class="wrap">
+                <a class="btn button" href="{% url 'account_login' %}">Login</a>
+            </div>
+        </div>    
 </div>
 {% endif %}
   </div>
