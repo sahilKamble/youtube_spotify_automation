@@ -71,16 +71,16 @@ of your existing third party accounts. {% endblocktrans %}</p>
                   <div class="col-lg-12">
                       <div class="form-group inner-addon left-addon {% if form.username.errors %}has-error{% endif %}">
                           <input class="form-control login-field" type="text" id="id_username" name="username" placeholder="Username">
-                          <span class="help-block">{{ form.username.errors }}</span>
+                          <small class="form-text text-muted">{{ form.username.errors }}</small>
                       </div>
                       <div class="form-group inner-addon left-addon {% if form.password1.errors %}has-error{% endif %}">
                           <input class="form-control login-field" type="password" id="id_password1" name="password1" placeholder="Password">
-                          <span class="help-block">{{ form.password1.errors }}</span>
+                          <small class="form-text text-muted">{{ form.password1.errors }}</small>
                       </div>
 
                       <div class="form-group inner-addon left-addon {% if form.password1.errors %}has-error{% endif %}">
                           <input class="form-control login-field" type="password" id="id_password2" name="password2" placeholder="Confirm Password">
-                          <span class="help-block">{{ form.password1.errors }}</span>
+                          <small class="form-text text-muted">{{ form.password1.errors }}</small>
                       </div>
 
                       <div class="form-group">

@@ -4,7 +4,8 @@ body {
 
 .card {
     margin: 1% 25%;
-    /* text-align: center; */
+    box-shadow: 0px 0px 50px 0px rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 .no-padding {
@@ -82,4 +83,10 @@ body {
     margin-bottom: auto;
     box-shadow: 0px 0px 50px 0px rgba(0,0,0,0.1);
     border-radius: 5px;
+}
+
+.errorlist {
+    list-style-type: none;
+    color: tomato;
+    text-align: left;
 }

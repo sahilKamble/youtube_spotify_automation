@@ -13,9 +13,19 @@
 </div>
 
 {% if yt_tracking and sp_tracking %}
-<div class="card card-body">
-            <a class="btn btn-success" href="{% url 'update_list'%}">Add tracks from YouTube playlist to Spotify playlist</a>
-            <a class="btn btn-success" href="{% url 'update_sp_list'%}">Add tracks from Spotify playlist to YouTube playlist</a>
+<!-- <div class="card card-body">
+</div> -->
+<div class="card">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col mb-3">
+                    <a class="btn btn-success" href="{% url 'update_list'%}">Add tracks from YouTube playlist to Spotify playlist</a>
+            </div>
+            <div class="col">
+                    <a class="btn btn-success" href="{% url 'update_sp_list'%}">Add tracks from Spotify playlist to YouTube playlist</a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endif %}
 
@@ -61,8 +71,12 @@
         </div>
         {% endfor %}
         <br>
-        <a class="btn btn-danger" href="{% url 'create_sp_playlist' %}">Create New Spotify Playlist Instead</a><br>
-        <button class="btn btn-danger" type="button" data-toggle="modal" data-target="#scratch-model">Use Different Account</button><br>
+        <div class="row">
+            <div class="col d-flex">
+                <a class="btn btn-danger mr-2" href="{% url 'create_sp_playlist' %}">Create New Spotify Playlist Instead</a><br>
+               <button class="btn btn-danger" type="button" data-toggle="modal" data-target="#scratch-model">Use Different Account</button><br>
+        </div>
+    </div>
     </div>
 </div>
 {% endif %}

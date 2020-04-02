@@ -133,7 +133,9 @@ def home_view(request):
             for playlist in playlists['items']:
                 if playlist['owner']['id'] == spuser['id']:
                     context['playlists'][playlist['id']] = {'name':playlist['name']}
-                    tracks = sp.playlist_tracks(user.profile.curr_sp_playlistid,fields="items(track(name))")
+                    results = sp.playlist(playlist['id'], fields="tracks,next")
+                    tracks = results['tracks']
+                    # tracks = sp.playlist_tracks(user.profile.curr_sp_playlistid,fields="items(track(name))")
                     context['playlists'][playlist['id']]['tracks'] = []
                     for item in tracks['items'] :
                         track = item['track']
