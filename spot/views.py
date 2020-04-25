@@ -199,9 +199,11 @@ def create_sp_playlist(request):
         access_token = token_info['access_token']
         sp = spotipy.Spotify(access_token)
         spuser = sp.current_user()
-        print(spuser)
-        sp.user_playlist_create(user=spuser['id'],name='Youtube Tracks',
-           description='Playlist created by spotify automation app, add your songs here ')
+        if request.method == "POST":
+            title =  request.POST['title']
+            description = request.POST['description']
+            sp.user_playlist_create(user=spuser['id'],name=title,
+                description=description)
     return redirect('home')
 
 
