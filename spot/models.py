@@ -6,7 +6,6 @@ from django.dispatch import receiver
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     creds = models.CharField(max_length=999, blank=True, null=True)
-    # gcreds = models.CharField(max_length=999, blank=True, null=True)
     curr_yt_playlistid = models.CharField(max_length=99, null=True)
     curr_sp_playlistid = models.CharField(max_length=99, null=True)
     

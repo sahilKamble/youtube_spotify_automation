@@ -30,7 +30,6 @@ SPOTIPY_CLIENT_SECRET = settings.SPOTIPY_CLIENT_SECRET
 SPOTIPY_REDIRECT_URI = settings.SPOTIPY_REDIRECT_URI
 SCOPE = settings.SPOTIPY_SCOPE
 
-# @login_required(login_url='login')
 def home_view(request):
     context = {}
 
@@ -110,7 +109,6 @@ def home_view(request):
         access_token = None
         token_info = None
 
-        # make all tis a seperate task
         if user.profile.creds:
             token_info = eval(user.profile.creds)
             sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)
@@ -129,13 +127,12 @@ def home_view(request):
             context['playlists'] = {}
             if not playlists['items']:
                 context['playlists'] =  {'None':
-                    {'name':'Could not find any playlist'}}#handle this
+                    {'name':'Could not find any playlist'}}
             for playlist in playlists['items']:
                 if playlist['owner']['id'] == spuser['id']:
                     context['playlists'][playlist['id']] = {'name':playlist['name']}
                     results = sp.playlist(playlist['id'], fields="tracks,next")
                     tracks = results['tracks']
-                    # tracks = sp.playlist_tracks(user.profile.curr_sp_playlistid,fields="items(track(name))")
                     context['playlists'][playlist['id']]['tracks'] = []
                     for item in tracks['items'] :
                         track = item['track']
@@ -219,7 +216,7 @@ def spotify(request):
 def callback(request):
     context = {}
     user = User.objects.get(username=request.user)
-    sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)#to-do handle this better, make object global??
+    sp_oauth = oauth2.SpotifyOAuth( SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI, scope=SCOPE)
     url = request.build_absolute_uri() 
     code = sp_oauth.parse_response_code(str(url))
     if code is None:
@@ -256,7 +253,6 @@ def update_list(request):
     access_token = token_info['access_token']
 
     sp = spotipy.Spotify(access_token)
-    # spid = []
 
     credentials = get_credentials(user)
     yt = build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
@@ -351,84 +347,7 @@ def get_credentials(user):
     if credentials.expired :
         req = Request()
         credentials.refresh(req)
-        # creds = None
-        # creds = {
-        #     'token': credentials.token,
-        #     'refresh_token': credentials.refresh_token,
-        #     'expiry': str(credentials.expiry), 
-        #     'token_uri': credentials.token_uri,
-        #     'client_id': credentials.client_id,
-        #     'client_secret': credentials.client_secret,
-        #     'scopes': credentials.scopes}
         st.token = credentials.token
         st.token_secret = credentials.refresh_token
         st.save()
     return credentials
-
-
-
-
-# @login_required(login_url='login')
-# def google(request):
-#     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-#         'client_secret.json',
-#         SCOPES)
-
-#     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
-
-#     authorization_url, state = flow.authorization_url(
-#         access_type='offline',
-#         include_granted_scopes='true')
-
-#     return redirect(authorization_url)
-
-# def signup_view(request):
-#     form = UserCreationForm(request.POST)
-#     if form.is_valid():
-#         form.save()
-#         username = form.cleaned_data.get('username')
-#         password = form.cleaned_data.get('password1')
-#         user = authenticate(username=username, password=password)
-#         login(request, user)
-#         return redirect('home')
-#     return render(request, 'signup.html', {'form': form})
-
-# def oauth2callback(request):
-
-#     #to do This->Note that you should do some error handling here incase its not a valid token.
-#     state = request.GET.get('state',None)
-#     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-#         'client_secret.json',
-#         SCOPES,
-#         state = state)#To do handle this giving scopes error
-
-#     flow.redirect_uri = 'http://127.0.0.1:8000/oauth2callback'
-
-#     url = request.build_absolute_uri() 
-#     flow.fetch_token(authorization_response=url)
-#     credentials = flow.credentials
-#     creds = dict()
-#     if credentials:
-#         creds = {
-#             'token': credentials.token,
-#             'refresh_token': credentials.refresh_token,
-#             'expiry': str(credentials.expiry), 
-#             'token_uri': credentials.token_uri,
-#             'client_id': credentials.client_id,
-#             'client_secret': credentials.client_secret,
-#             'scopes': credentials.scopes}
-
-#         user = User.objects.get(username=request.user)
-#         user.profile.gcreds = str(creds)
-#         user.save()
-
-#     #     info = build('oauth2', 'v2', credentials=credentials)
-#     #     if info:
-#     #         info_res = info.userinfo().get().execute()
-#     #         print(info_res)
-
-#     #     token_info = eval(user.profile.gcreds)
-#     # else:
-#     #     HttpResponse("Could not fetch token go to 'home' and try again")
-
-#     return redirect('home')
