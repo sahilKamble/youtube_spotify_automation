@@ -6,9 +6,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'vt0&tvetokf)t136*cy6dh!iv!d8$$x6=ou1ugz1rh**pnx^bt'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1/', 'playlitsr.herokuapp.com/']
 
 # Application definition
 INSTALLED_APPS = [
