@@ -31,3 +31,5 @@ uritemplate==3.0.1
 urllib3==1.25.8
 whitenoise==5.1.0
 youtube-dl==2020.3.24
+dj-database-url 
+psycopg2

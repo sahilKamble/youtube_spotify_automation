@@ -136,6 +136,11 @@ LOGIN_URL = '/accounts/login/'
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
+# ie if Heroku server
+if 'DATABASE_URL' in os.environ:
+    import dj_database_url
+    DATABASES = {'default': dj_database_url.config()}
+
 DNS = '8.8.8.8'
 
 SOCIALACCOUNT_PROVIDERS = {
